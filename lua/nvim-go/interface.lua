@@ -53,7 +53,7 @@ function M.generate_stubs_for_interface(bufnr, iface, struct_name)
 	-- Find end of file or after last function
 	local line_count = vim.api.nvim_buf_line_count(bufnr)
 
-	util.insert_lines(bufnr, line_count - 1, lines)
+	util.insert_lines(bufnr, line_count, lines)
 
 	vim.schedule(function()
 		util.format_buffer(bufnr)
@@ -174,7 +174,10 @@ function M.implement_interface_for_struct(bufnr, struct, iface_name)
 	end
 
 	local lines = M.build_interface_stubs(iface, struct.name)
-	util.insert_lines(bufnr, struct.end_row, lines)
+
+	-- [[ CHANGE: Insert at end of file instead of after struct ]]
+	local line_count = vim.api.nvim_buf_line_count(bufnr)
+	util.insert_lines(bufnr, line_count, lines)
 
 	vim.schedule(function()
 		util.format_buffer(bufnr)
