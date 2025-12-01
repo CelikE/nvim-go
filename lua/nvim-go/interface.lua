@@ -75,24 +75,25 @@ function M.implement_interface_for_struct(bufnr, struct, iface_name)
 	end
 
 	-- Updated query for modern tree-sitter-go:
-	-- 'method_spec_list' is hidden/removed in newer grammars, so we capture 'interface_type' directly.
+	-- We capture 'interface_type' directly as @methods_node
 	local query_string = [[
     (type_declaration
       (type_spec
         name: (type_identifier) @name
-        type: (interface_type) @methods)) @interface
+        type: (interface_type) @methods_node)) @interface
   ]]
 
 	local query = vim.treesitter.query.parse("go", query_string)
-
 	local iface = nil
+
+	-- 1. Find the interface node by name
 	for id, node, _ in query:iter_captures(root, bufnr, 0, -1) do
 		local capture_name = query.captures[id]
 		if capture_name == "name" then
 			local name = vim.treesitter.get_node_text(node, bufnr)
 			if name == iface_name then
-				-- Found the interface, now get its details
-				local parent = node:parent():parent()
+				-- Found the interface declaration
+				local parent = node:parent():parent() -- type_spec -> type_declaration
 				local start_row, _, end_row, _ = parent:range()
 
 				iface = {
@@ -103,31 +104,72 @@ function M.implement_interface_for_struct(bufnr, struct, iface_name)
 					methods = {},
 				}
 
-				-- Get methods
+				-- 2. Now find the interface_type node (@methods_node) associated with this name
+				-- We search specifically within the parent scope to match the correct one
 				for child_id, child_node, _ in query:iter_captures(parent, bufnr, start_row, end_row + 1) do
-					local child_name = query.captures[child_id]
-					if child_name == "methods" then
-						iface.methods = ts.parse_interface_methods(child_node, bufnr)
+					if query.captures[child_id] == "methods_node" then
+						-- 3. Robust Manual Parsing (Type-Agnostic)
+						-- We iterate children of the interface_type directly.
+						-- We do NOT check for "method_spec" type to avoid crashing on grammar changes.
+						-- Instead, we look for the pattern: Name(field_identifier) -> Params(parameter_list) -> Result
+
+						for method_node in child_node:iter_children() do
+							local method = { params = {} }
+							local found_name = false
+							local found_params = false
+
+							-- Inspect the components of this line
+							for part in method_node:iter_children() do
+								local type = part:type()
+
+								if type == "field_identifier" and not found_name then
+									method.name = vim.treesitter.get_node_text(part, bufnr)
+									found_name = true
+								elseif type == "parameter_list" and not found_params then
+									-- Found the parameters
+									method.params = ts.parse_parameter_list(part, bufnr)
+									found_params = true
+								elseif found_params and type ~= "comment" then
+									-- Anything after parameters is the result (return type)
+									-- It might be a type_identifier, parameter_list (tuple return), etc.
+									method.result = vim.treesitter.get_node_text(part, bufnr)
+								end
+							end
+
+							if method.name then
+								table.insert(iface.methods, method)
+							end
+						end
 					end
 				end
-
 				break
 			end
 		end
 	end
 
-	if not iface then
-		-- Interface not found in current file, generate basic stubs
-		util.notify(
-			string.format("Interface %s not found in file. Using placeholder.", iface_name),
-			vim.log.levels.WARN
-		)
+	if iface then
+		-- Methods are already a list in this approach
+	end
 
-		-- Create a placeholder interface for common interfaces
-		iface = M.get_common_interface(iface_name)
+	if not iface or #iface.methods == 0 then
+		-- Interface not found in current file or has no methods, try common interfaces
 		if not iface then
-			util.notify("Unknown interface: " .. iface_name, vim.log.levels.ERROR)
-			return
+			-- Only notify if we didn't find the interface definition at all
+			util.notify(
+				string.format("Interface %s not found in file (or empty). Checking common interfaces...", iface_name),
+				vim.log.levels.INFO
+			)
+		end
+
+		local common_iface = M.get_common_interface(iface_name)
+		if common_iface then
+			iface = common_iface
+		else
+			if not iface then -- If we didn't find it in file AND it's not common
+				util.notify("Unknown interface: " .. iface_name, vim.log.levels.ERROR)
+				return
+			end
+			-- If we found it in file but it had no methods, we just proceed (maybe it's a marker interface)
 		end
 	end
 
