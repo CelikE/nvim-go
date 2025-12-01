@@ -1,0 +1,265 @@
+*nvim-go.txt*  Go development plugin for NeoVim
+
+Author:  CelikE
+License: MIT
+Version: 1.0.0
+
+==============================================================================
+CONTENTS                                                    *nvim-go-contents*
+
+    1. Introduction .......................... |nvim-go-introduction|
+    2. Requirements .......................... |nvim-go-requirements|
+    3. Installation .......................... |nvim-go-installation|
+    4. Configuration ......................... |nvim-go-configuration|
+    5. Commands .............................. |nvim-go-commands|
+    6. Keymaps ............................... |nvim-go-keymaps|
+    7. API ................................... |nvim-go-api|
+
+==============================================================================
+1. INTRODUCTION                                         *nvim-go-introduction*
+
+nvim-go is a comprehensive Go development plugin that provides code
+generation, refactoring tools, and utilities following the Uber Go Style
+Guide.
+
+Features:
+  - Constructor and builder pattern generation
+  - Struct tag management (JSON, YAML, DB, validation)
+  - Getter/setter generation
+  - Interface implementation and extraction
+  - Table-driven test generation
+  - Mock generation
+  - Error type generation
+  - Import organization (Uber style grouping)
+  - Documentation generation
+
+==============================================================================
+2. REQUIREMENTS                                         *nvim-go-requirements*
+
+  - NeoVim 0.8 or higher
+  - nvim-treesitter with Go parser installed
+  - gofmt or goimports in PATH (for formatting)
+
+==============================================================================
+3. INSTALLATION                                         *nvim-go-installation*
+
+Using lazy.nvim: >lua
+    {
+      "CelikE/nvim-go",
+      ft = "go",
+      dependencies = { "nvim-treesitter/nvim-treesitter" },
+      opts = {},
+    }
+<
+
+Using packer.nvim: >lua
+    use {
+      "CelikE/nvim-go",
+      requires = { "nvim-treesitter/nvim-treesitter" },
+      ft = "go",
+      config = function()
+        require("nvim-go").setup()
+      end,
+    }
+<
+
+==============================================================================
+4. CONFIGURATION                                       *nvim-go-configuration*
+
+Call setup() with your options: >lua
+    require("nvim-go").setup({
+      keymaps = {
+        enabled = true,
+        prefix = "<leader>g",
+      },
+      constructor = {
+        prefix = "New",
+        comment = true,
+      },
+      tags = {
+        json = { transform = "camelcase", options = {} },
+        yaml = { transform = "camelcase", options = {} },
+        db = { transform = "snakecase", options = {} },
+        validate = { transform = "keep", options = {} },
+      },
+      test = {
+        template = "table",
+        parallel = true,
+      },
+      style = {
+        uber = true,
+      },
+    })
+<
+
+                                                *nvim-go-config-keymaps*
+keymaps.enabled         Enable default keymaps for Go files.
+                        Default: true
+
+keymaps.prefix          Prefix for all keymaps.
+                        Default: "<leader>g"
+
+                                                *nvim-go-config-constructor*
+constructor.prefix      Prefix for constructor function names.
+                        Default: "New"
+
+constructor.comment     Add documentation comment to constructors.
+                        Default: true
+
+                                                *nvim-go-config-tags*
+tags.<type>.transform   Field name transformation for tags.
+                        Options: "camelcase", "snakecase", "pascalcase",
+                                 "lispcase", "keep"
+
+tags.<type>.options     Additional tag options (e.g., {"omitempty"}).
+                        Default: {}
+
+                                                *nvim-go-config-test*
+test.template           Test template style: "table" or "simple".
+                        Default: "table"
+
+test.parallel           Add t.Parallel() to generated tests.
+                        Default: true
+
+==============================================================================
+5. COMMANDS                                               *nvim-go-commands*
+
+                                                          *:GoCodeAction*
+:GoCodeAction           Show available code actions at cursor position.
+
+                                                          *:GoGenConstructor*
+:GoGenConstructor       Generate constructor for struct at cursor.
+
+                                                          *:GoGenBuilder*
+:GoGenBuilder           Generate builder pattern for struct at cursor.
+
+                                                          *:GoAddJsonTags*
+:GoAddJsonTags          Add JSON tags to struct fields.
+
+                                                          *:GoAddYamlTags*
+:GoAddYamlTags          Add YAML tags to struct fields.
+
+                                                          *:GoAddDbTags*
+:GoAddDbTags            Add DB tags to struct fields.
+
+                                                          *:GoAddValidateTags*
+:GoAddValidateTags      Add validation tags to struct fields.
+
+                                                          *:GoAddAllTags*
+:GoAddAllTags           Add all common tags (JSON, YAML, DB).
+
+                                                          *:GoRemoveTags*
+:GoRemoveTags           Remove all tags from struct fields.
+
+                                                          *:GoGenGetters*
+:GoGenGetters           Generate getter methods for struct.
+
+                                                          *:GoGenSetters*
+:GoGenSetters           Generate setter methods for struct.
+
+                                                          *:GoGenGettersSetters*
+:GoGenGettersSetters    Generate both getters and setters.
+
+                                                          *:GoImplInterface*
+:GoImplInterface        Implement interface methods for struct.
+                        Prompts for interface name if on struct.
+
+                                                          *:GoExtractInterface*
+:GoExtractInterface     Extract interface from struct's exported methods.
+
+                                                          *:GoGenTest*
+:GoGenTest              Generate table-driven test for function at cursor.
+
+                                                          *:GoGenBenchmark*
+:GoGenBenchmark         Generate benchmark for function at cursor.
+
+                                                          *:GoGenMock*
+:GoGenMock              Generate mock implementation for interface.
+
+                                                          *:GoGenError*
+:GoGenError             Generate custom error type.
+
+                                                          *:GoGenEnum*
+:GoGenEnum              Generate String() method for iota enum.
+
+                                                          *:GoFillStruct*
+:GoFillStruct           Fill struct literal with zero values.
+
+                                                          *:GoSplitStruct*
+:GoSplitStruct          Toggle struct literal between single/multi line.
+
+                                                          *:GoToggleReceiver*
+:GoToggleReceiver       Toggle between pointer and value receiver.
+
+                                                          *:GoOrganizeImports*
+:GoOrganizeImports      Organize imports with Uber-style grouping.
+
+                                                          *:GoGenDoc*
+:GoGenDoc               Generate Go doc comment for function/type.
+
+==============================================================================
+6. KEYMAPS                                                 *nvim-go-keymaps*
+
+Default keymaps (when keymaps.enabled = true):
+
+Keymap          Command                 Description ~
+<leader>ga      GoCodeAction            Show code actions
+<leader>gc      GoGenConstructor        Generate constructor
+<leader>gb      GoGenBuilder            Generate builder
+
+Tags:
+<leader>gtj     GoAddJsonTags           Add JSON tags
+<leader>gty     GoAddYamlTags           Add YAML tags
+<leader>gtd     GoAddDbTags             Add DB tags
+<leader>gtv     GoAddValidateTags       Add validate tags
+<leader>gta     GoAddAllTags            Add all tags
+<leader>gtr     GoRemoveTags            Remove tags
+
+Accessors:
+<leader>ggg     GoGenGetters            Generate getters
+<leader>ggs     GoGenSetters            Generate setters
+<leader>gga     GoGenGettersSetters     Generate both
+
+Interface:
+<leader>gii     GoImplInterface         Implement interface
+<leader>gie     GoExtractInterface      Extract interface
+
+Testing:
+<leader>gtt     GoGenTest               Generate test
+<leader>gtb     GoGenBenchmark          Generate benchmark
+<leader>gtm     GoGenMock               Generate mock
+
+Other:
+<leader>ge      GoGenError              Generate error type
+<leader>gn      GoGenEnum               Generate enum String()
+<leader>gf      GoFillStruct            Fill struct
+<leader>gr      GoToggleReceiver        Toggle receiver type
+<leader>go      GoOrganizeImports       Organize imports
+<leader>gd      GoGenDoc                Generate documentation
+
+==============================================================================
+7. API                                                         *nvim-go-api*
+
+The plugin exposes a Lua API for programmatic access:
+
+>lua
+    local nvim_go = require("nvim-go")
+
+    -- Access submodules
+    nvim_go.constructor.generate()
+    nvim_go.builder.generate()
+    nvim_go.tags.add_json()
+    nvim_go.accessor.generate_getters()
+    nvim_go.interface.implement()
+    nvim_go.test.generate()
+    nvim_go.mock.generate()
+    nvim_go.error.generate()
+    nvim_go.enum.generate()
+    nvim_go.struct.fill()
+    nvim_go.receiver.toggle()
+    nvim_go.imports.organize()
+    nvim_go.doc.generate()
+<
+
+==============================================================================
+vim:tw=78:ts=8:ft=help:norl:
