@@ -147,7 +147,7 @@ end
 function M.get_common_interface(name)
 	local common = {
 		Stringer = {
-			name = "Stringer",
+			name = "fmt.Stringer", -- Qualified name
 			methods = {
 				{ name = "String", params = {}, result = "string" },
 			},
@@ -159,7 +159,7 @@ function M.get_common_interface(name)
 			},
 		},
 		Reader = {
-			name = "Reader",
+			name = "io.Reader", -- Qualified name
 			methods = {
 				{
 					name = "Read",
@@ -169,7 +169,7 @@ function M.get_common_interface(name)
 			},
 		},
 		Writer = {
-			name = "Writer",
+			name = "io.Writer", -- Qualified name
 			methods = {
 				{
 					name = "Write",
@@ -179,13 +179,13 @@ function M.get_common_interface(name)
 			},
 		},
 		Closer = {
-			name = "Closer",
+			name = "io.Closer", -- Qualified name
 			methods = {
 				{ name = "Close", params = {}, result = "error" },
 			},
 		},
 		ReadWriter = {
-			name = "ReadWriter",
+			name = "io.ReadWriter", -- Qualified name
 			methods = {
 				{
 					name = "Read",
@@ -200,7 +200,7 @@ function M.get_common_interface(name)
 			},
 		},
 		ReadCloser = {
-			name = "ReadCloser",
+			name = "io.ReadCloser", -- Qualified name
 			methods = {
 				{
 					name = "Read",
@@ -211,7 +211,7 @@ function M.get_common_interface(name)
 			},
 		},
 		WriteCloser = {
-			name = "WriteCloser",
+			name = "io.WriteCloser", -- Qualified name
 			methods = {
 				{
 					name = "Write",
@@ -222,7 +222,7 @@ function M.get_common_interface(name)
 			},
 		},
 		Handler = {
-			name = "Handler",
+			name = "http.Handler", -- Qualified name
 			methods = {
 				{
 					name = "ServeHTTP",
